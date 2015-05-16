@@ -6,6 +6,27 @@ using System.Threading.Tasks;
 
 namespace WebClient
 {
+    public class UrlRequestTuple
+    {
+        public string Channel { get; set; }
+        public DateTime From { get; set; }
+        public DateTime To { get; set; }
+        public static UrlRequestTuple Create(string channel, DateTime from, DateTime to)
+        {
+            UrlRequestTuple tuple = new UrlRequestTuple();
+            tuple.Channel = channel;
+            tuple.From = from;
+            tuple.To = to;
+            return tuple;
+        }
+        public override string ToString()
+        {
+            return "channel=" + Channel + "&"
+                + "from=" + From + "&"
+                + "to=" + To;
+        }
+    }
+
     public class UrlResponseTuple
     {
         public string Url { get; set; }

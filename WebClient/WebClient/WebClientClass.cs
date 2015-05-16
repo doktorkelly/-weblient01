@@ -50,13 +50,13 @@ namespace WebClient
             return result;
         }
 
-        public IEnumerable<string> DownloadUrlsWithPLinq(IEnumerable<Tuple<string,string>> inList, int numThreads = 1) 
+        public IEnumerable<string> DownloadRanges(IEnumerable<UrlRequestTuple> inList, int numThreads = 1) 
         {
             List<string> result = inList
                 .AsParallel()
                 .WithDegreeOfParallelism(numThreads)
-                .Select(paramList => paramList.Item1 + "&" + paramList.Item2)
-                .Select(url => WebDao.GetDataAsync(url).Result)
+                .SelectMany(req => ToDayRequest(req))
+                .Select(req => WebDao.GetDataAsync(req.ToString()).Result)
                 .Select(resTuple => WriteToFile(resTuple.Url, resTuple.Response))
                 .ToList();
                 //.GroupBy(paramList => paramList.Item1)
@@ -64,6 +64,31 @@ namespace WebClient
                 //.ToList();
             return result;
         }
+
+        private IEnumerable<UrlRequestTuple> ToDayRequest(UrlRequestTuple req)
+        {
+            IEnumerable<UrlRequestTuple> urlList = new List<UrlRequestTuple>();
+            string channel = req.Channel;
+            IEnumerable<DateTime> days = RangeToDayList(req.From, req.To);
+            IEnumerable<UrlRequestTuple> urls = days
+                .Select(day => DayToRange(day))
+                .Select(range => UrlRequestTuple.Create(req.Channel, range.Item1, range.Item1));
+            return urls;
+        }
+
+        private IEnumerable<DateTime> RangeToDayList(DateTime from, DateTime to)
+        {
+            int numDays = (from - to).Days;
+            IEnumerable<DateTime> days = Enumerable.Range(0, numDays)
+                .Select(day => from.AddDays(day));
+            return days;
+        }
+
+        private Tuple<DateTime, DateTime> DayToRange(DateTime day)
+        {
+            return Tuple.Create<DateTime, DateTime>(day, day);
+        }
+
 
         private IEnumerable<string> DownloadByItem1(string key, List<Tuple<string, string>> list)
         {
