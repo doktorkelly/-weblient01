@@ -9,13 +9,13 @@ namespace WebClient
 {
     public class WebDAO : IWebDAO
     {
-        public async Task<UrlResponseTuple> GetDataAsync(string url)
+        public async Task<EventResponse> GetDataAsync(string url)
         {
             using (HttpClient client = new HttpClient())
             {
                 client.BaseAddress = new Uri("http://localhost:9000/");
                 string response = await client.GetStringAsync(url);
-                return UrlResponseTuple.Create(url, response);
+                return EventResponse.Create(url, response);
             }
         }
 
@@ -26,21 +26,6 @@ namespace WebClient
                 client.BaseAddress = new Uri("http://localhost:9000/");
                 string response = await client.GetStringAsync(url);
                 processFunc.Invoke(url, response);
-            }
-        }
-
-        private Task<string> GetFromUrlTaskVA(string url)
-        {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri("http://localhost:9000/");
-                Task<string> responseTask = client.GetStringAsync(url)
-                    .ContinueWith<string>(t => t.Result);
-                //.ContinueWith(act => {
-                //    string response = act.Result;
-                //    string fileWritten = WriteToFile(url, response);
-                //});
-                return responseTask;
             }
         }
     }

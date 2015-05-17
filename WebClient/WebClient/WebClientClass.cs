@@ -29,11 +29,11 @@ namespace WebClient
 
         public IEnumerable<string> DownloadUrls(IEnumerable<string> urls)
         {
-            IList<Task<UrlResponseTuple>> tasks = urls
+            IList<Task<EventResponse>> tasks = urls
                 .Select(url => WebDao.GetDataAsync(url))
                 .ToList();
             IEnumerable<string> fileNames = Task
-                .WhenAll<UrlResponseTuple>(tasks)
+                .WhenAll<EventResponse>(tasks)
                 .Result
                 .Select(resTuple => WriteToFile(resTuple.Url, resTuple.Response));
             return fileNames;
@@ -50,44 +50,42 @@ namespace WebClient
             return result;
         }
 
-        public IEnumerable<string> DownloadRanges(IEnumerable<UrlRequestTuple> inList, int numThreads = 1) 
+        public IEnumerable<string> DownloadRanges(IEnumerable<EventRequest> inList, int numThreads = 1) 
         {
-            List<string> result = inList
+            List<string> fileNames = inList
                 .AsParallel()
                 .WithDegreeOfParallelism(numThreads)
-                .SelectMany(req => ToDayRequest(req))
+                .SelectMany(req => ToDayRequests(req))
                 .Select(req => WebDao.GetDataAsync(req.ToString()).Result)
                 .Select(resTuple => WriteToFile(resTuple.Url, resTuple.Response))
+                .ToList();
+            List<string> fileNamesOrdered = fileNames
+                .OrderBy(fileName => fileName)
                 .ToList();
                 //.GroupBy(paramList => paramList.Item1)
                 //.Select(grp => DownloadByItem1(grp.Key, grp.ToList()))
                 //.ToList();
-            return result;
+            return fileNamesOrdered;
         }
 
-        private IEnumerable<UrlRequestTuple> ToDayRequest(UrlRequestTuple req)
+        public static IEnumerable<EventRequest> ToDayRequests(EventRequest req)
         {
-            IEnumerable<UrlRequestTuple> urlList = new List<UrlRequestTuple>();
-            string channel = req.Channel;
-            IEnumerable<DateTime> days = RangeToDayList(req.From, req.To);
-            IEnumerable<UrlRequestTuple> urls = days
-                .Select(day => DayToRange(day))
-                .Select(range => UrlRequestTuple.Create(req.Channel, range.Item1, range.Item1));
-            return urls;
+            //IEnumerable<DateTime> days = TimeRange.RangeToDayList(req.From, req.To);
+            //IEnumerable<TimeRange> ranges = days
+            //    .Select(day => TimeRange.DayListToRange(new List<DateTime>() { day }));
+            //IEnumerable<UrlRequestTuple> dayRequests = ranges
+            //    .Select(range => UrlRequestTuple.Create(req.Channel, range.From, range.To));
+
+            // a) expand all days in range
+            // b) for each day create a range (spanning only one day)
+            // c) for each day-range create a request
+            IEnumerable<EventRequest> dayRequests = TimeRange.RangeToDayList(req.From, req.To) // a
+                .Select(day => TimeRange.DayListToRange(new List<DateTime>() { day }))            // b
+                .Select(range => EventRequest.Create(req.Channel, range.From, range.To));      // c
+            return dayRequests;
         }
 
-        private IEnumerable<DateTime> RangeToDayList(DateTime from, DateTime to)
-        {
-            int numDays = (from - to).Days;
-            IEnumerable<DateTime> days = Enumerable.Range(0, numDays)
-                .Select(day => from.AddDays(day));
-            return days;
-        }
 
-        private Tuple<DateTime, DateTime> DayToRange(DateTime day)
-        {
-            return Tuple.Create<DateTime, DateTime>(day, day);
-        }
 
 
         private IEnumerable<string> DownloadByItem1(string key, List<Tuple<string, string>> list)

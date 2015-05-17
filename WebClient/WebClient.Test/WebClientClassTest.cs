@@ -50,6 +50,7 @@ namespace WebClient.Test
         }
 
         [Test]
+        [Ignore("ok but slow")]
         public void DownloadUrlwithPLinq_in_out()
         {
             //Arrange
@@ -69,14 +70,15 @@ namespace WebClient.Test
         }
 
         [Test]
+        //[Ignore("TODO")]
         public void DownloadRanges_in_out()
         {
             //Arrange
             IWebDAO webDAO = new WebDAOFake();
             WebClientClass webClient = new WebClientClass(webDAO);
-            IEnumerable<string> urls = new List<string>() { "url0", "url1", "url2", "url3", "url4", "url5", "url6", "url7", "url8", "url9" };
-            IEnumerable<UrlRequestTuple> requests = urls
-                .Select(url => UrlRequestTuple.Create(url, new DateTime(2015, 01, 01), new DateTime(2015, 01, 05)));
+            IEnumerable<string> channels = new List<string>() { "chan0", "chan1", "chan2", "chan3", "chan4", "chan5", "chan6", "chan7", "chan8", "chan9" };
+            IEnumerable<EventRequest> requests = channels
+                .Select(url => EventRequest.Create(url, new DateTime(2015, 01, 01), new DateTime(2015, 01, 05)));
             Console.WriteLine();
 
             //Act
@@ -84,9 +86,26 @@ namespace WebClient.Test
 
             //Assert
             Assert.IsNotEmpty(filesWritten);
-            Assert.AreEqual("url0.html", filesWritten.ElementAt(0));
-            Assert.AreEqual("url1.html", filesWritten.ElementAt(1));
-            Assert.AreEqual("url2.html", filesWritten.ElementAt(2));
+            Assert.AreEqual("channel=chan0&from=2015-01-01&to=2015-01-01", filesWritten.ElementAt(0));
+            Assert.AreEqual("channel=chan0&from=2015-01-02&to=2015-01-02", filesWritten.ElementAt(1));
+            Assert.AreEqual("channel=chan1&from=2015-01-01&to=2015-01-01", filesWritten.ElementAt(5));
+        }
+
+        [Test]
+        public void ToDayRequests_in_out()
+        {
+            //Arrange
+            EventRequest req = EventRequest.Create("chan01", new DateTime(2015, 01, 01), new DateTime(2015, 01, 05));
+            EventRequest reqExp1 = EventRequest.Create("chan01", new DateTime(2015, 01, 01), new DateTime(2015, 01, 01));
+            EventRequest reqExp2 = EventRequest.Create("chan01", new DateTime(2015, 01, 02), new DateTime(2015, 01, 02));
+
+            //Act
+            IEnumerable<EventRequest> reqList = WebClientClass.ToDayRequests(req);
+
+            //Assert
+            Assert.IsNotEmpty(reqList);
+            Assert.AreEqual(reqExp1, reqList.ElementAt(0));
+            Assert.AreEqual(reqExp2, reqList.ElementAt(1));
         }
 
     }

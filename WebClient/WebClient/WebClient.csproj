@@ -47,8 +47,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventRequest.cs" />
+    <Compile Include="EventResponse.cs" />
     <Compile Include="IWebDAO.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TimeRange.cs" />
     <Compile Include="WebClientClass.cs" />
     <Compile Include="WebDAO.cs" />
     <Compile Include="WebDAOFake.cs" />
