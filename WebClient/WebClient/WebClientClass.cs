@@ -1,4 +1,5 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -11,13 +12,15 @@ namespace WebClient
 {
     public class WebClientClass
     {
-        public IList<string> FilesWritten { get; private set; }
+        public IList<string> FilesWritten { get; private set; } // deprecated because stateful
         private IWebDAO WebDao { get; set; }
+        private ILog Logger { get; set; }
 
-        public WebClientClass(IWebDAO webDAO = null)
+        public WebClientClass(IWebDAO webDAO = null, ILog logger = null)
         {
             this.FilesWritten = new List<string>();
             this.WebDao = webDAO ?? new WebDAO();
+            this.Logger = logger ?? LogManager.GetLogger(typeof(WebClientClass));
         }
 
         public void DownloadStateful(IEnumerable<string> urls)
@@ -70,34 +73,24 @@ namespace WebClient
 
         public static IEnumerable<EventRequest> ToDayRequests(EventRequest req)
         {
-            //IEnumerable<DateTime> days = TimeRange.RangeToDayList(req.From, req.To);
-            //IEnumerable<TimeRange> ranges = days
-            //    .Select(day => TimeRange.DayListToRange(new List<DateTime>() { day }));
-            //IEnumerable<UrlRequestTuple> dayRequests = ranges
-            //    .Select(range => UrlRequestTuple.Create(req.Channel, range.From, range.To));
-
-            // a) expand all days in range
-            // b) for each day create a range (spanning only one day)
+            // a) expand all days from range
+            // b) for each day create a day-range (spanning only one day)
             // c) for each day-range create a request
             IEnumerable<EventRequest> dayRequests = TimeRange.RangeToDayList(req.From, req.To) // a
-                .Select(day => TimeRange.DayListToRange(new List<DateTime>() { day }))            // b
+                .Select(day => TimeRange.DayListToRange(new List<DateTime>() { day }))         // b
                 .Select(range => EventRequest.Create(req.Channel, range.From, range.To));      // c
             return dayRequests;
         }
-
-
-
 
         private IEnumerable<string> DownloadByItem1(string key, List<Tuple<string, string>> list)
         {
             throw new NotImplementedException();
         }
 
-
         private string WriteToFile(string url, string pageResponse)
         {
             //TODO: write pageResponse into file
-            Console.WriteLine("WriteToFile: "
+            Logger.Debug("WriteToFile: "
                 + "url: " + url + ", "
                 + "thread id: " + Thread.CurrentThread.ManagedThreadId);
             string fileWritten = url + ".html";

@@ -11,12 +11,14 @@ namespace WebClient.Test
     [TestFixture]
     class WebClientClassTest
     {
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(WebClientClassTest));
+
         [Test]
-        [Ignore]
+        [Ignore("deprecated")]
         public void DownloadStateful_in_out()
         {
             //Arrange
-            IWebDAO webDAO = new WebDAOFake();
+            IWebDAO webDAO = new WebDAOFake(Logger);
             WebClientClass webClient = new WebClientClass(webDAO);
             IEnumerable<string> urls = new List<string>() { "url1", "url2" };
 
@@ -31,11 +33,11 @@ namespace WebClient.Test
         }
 
         [Test]
-        [Ignore]
+        [Ignore("deprecated")]
         public void DownloadUrls_in_out()
         {
             //Arrange
-            IWebDAO webDAO = new WebDAOFake();
+            IWebDAO webDAO = new WebDAOFake(Logger);
             WebClientClass webClient = new WebClientClass(webDAO);
             IEnumerable<string> urls = new List<string>() { "url1", "url2", "url3" };
 
@@ -54,10 +56,9 @@ namespace WebClient.Test
         public void DownloadUrlwithPLinq_in_out()
         {
             //Arrange
-            IWebDAO webDAO = new WebDAOFake();
+            IWebDAO webDAO = new WebDAOFake(Logger);
             WebClientClass webClient = new WebClientClass(webDAO);
             IEnumerable<string> urls = new List<string>() { "url0", "url1", "url2", "url3", "url4", "url5","url6", "url7", "url8", "url9" };
-            Console.WriteLine();
 
             //Act
             IEnumerable<string> filesWritten = webClient.DownloadUrlsWithPLinq(urls, 8);
@@ -70,25 +71,24 @@ namespace WebClient.Test
         }
 
         [Test]
-        //[Ignore("TODO")]
         public void DownloadRanges_in_out()
         {
             //Arrange
-            IWebDAO webDAO = new WebDAOFake();
+            IWebDAO webDAO = new WebDAOFake(Logger);
             WebClientClass webClient = new WebClientClass(webDAO);
             IEnumerable<string> channels = new List<string>() { "chan0", "chan1", "chan2", "chan3", "chan4", "chan5", "chan6", "chan7", "chan8", "chan9" };
             IEnumerable<EventRequest> requests = channels
                 .Select(url => EventRequest.Create(url, new DateTime(2015, 01, 01), new DateTime(2015, 01, 05)));
-            Console.WriteLine();
 
             //Act
             IEnumerable<string> filesWritten = webClient.DownloadRanges(requests, 8);
 
             //Assert
+            Logger.Info("filesWritten:\r\n" + string.Join("\r\n", filesWritten.Select(file => file.ToString())));
             Assert.IsNotEmpty(filesWritten);
-            Assert.AreEqual("channel=chan0&from=2015-01-01&to=2015-01-01", filesWritten.ElementAt(0));
-            Assert.AreEqual("channel=chan0&from=2015-01-02&to=2015-01-02", filesWritten.ElementAt(1));
-            Assert.AreEqual("channel=chan1&from=2015-01-01&to=2015-01-01", filesWritten.ElementAt(5));
+            Assert.AreEqual("channel=chan0&from=2015-01-01&to=2015-01-01.html", filesWritten.ElementAt(0));
+            Assert.AreEqual("channel=chan0&from=2015-01-02&to=2015-01-02.html", filesWritten.ElementAt(1));
+            Assert.AreEqual("channel=chan1&from=2015-01-01&to=2015-01-01.html", filesWritten.ElementAt(5));
         }
 
         [Test]
